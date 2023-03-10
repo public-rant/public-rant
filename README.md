@@ -44,5 +44,3 @@ Initially developers wanting to deploy branches to sandboxed environments, then 
 *How practical is your solution in terms of available resources, technology, and time? Consider any potential barriers to success.*
 
 See [`NOTES.md`](src/panoptical/NOTES.md)
-
-
