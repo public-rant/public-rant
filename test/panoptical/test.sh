@@ -40,9 +40,7 @@ source dev-container-features-test-lib
 # Feature-specific tests
 # The 'check' command comes from the dev-container-features-test-lib. Syntax is...
 # check <LABEL> <cmd> [args...]
-BASHRC=$( [ -f "$HOME/.bash_profile" ] && echo "$HOME/.bash_profile" || echo "$HOME/.bashrc" )
-source "$BASHRC"
-check "validate favorite color" color # this needs to run tests to validate "features" we downloaded to the feature/facet/bouleringhold
+check "pytest proxy" panoptical 
 
 # Report result
 # If any of the checks above exited with a non-zero exit code, the test will fail.
