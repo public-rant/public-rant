@@ -2,16 +2,16 @@
     "mojo": {
         "image": "docker.io/library/ubuntu:focal",
         "features": {
-            "color": {
-                "favorite": "optimise your calendar with mojo"
+            "panoptical": {
+                "spec": "optimise your calendar with mojo"
             }
         }
     },
     "python": {
         "image": "docker.io/library/ubuntu:focal",
         "features": {
-            "color": {
-                "favorite": "optimise your calendar with python"
+            "panoptical": {
+                "spec": "optimise your calendar with python"
             }
         }
     }
