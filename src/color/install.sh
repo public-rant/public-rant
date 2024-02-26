@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 echo "Activating feature 'color'"
@@ -20,7 +20,17 @@ echo "The effective dev container containerUser's home directory is '$_CONTAINER
 cat > /usr/local/bin/color \
 << EOF
 #!/bin/sh
-echo "my favorite color is ${FAVORITE}"
+pytest -k ${FAVORITE}
 EOF
+
+
+
+# echo "Downloading the Latest Mojo Compiler"
+# curl https://get.modular.com | sh - && modular auth buildAndTestMojoOSS
+# modular install mojo
+# BASHRC=$( [ -f "$HOME/.bash_profile" ] && echo "$HOME/.bash_profile" || echo "$HOME/.bashrc" )
+# echo 'export MODULAR_HOME="/home/runner/.modular"' >> "$BASHRC"
+# echo 'export PATH="/home/runner/.modular/pkg/packages.modular.com_mojo/bin:$PATH"' >> "$BASHRC"
+# source "$BASHRC"
 
 chmod +x /usr/local/bin/color
