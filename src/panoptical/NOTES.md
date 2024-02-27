@@ -62,6 +62,14 @@ You send prompt to LLM. Expected behaviour:
 - uses calcurse-caldav to sync changes upstream/downstream
 - sends/receives attachments from caldav
 
+__NB__ The idea is that the "test" you invoke when installing the devcontainer-feature `panoptical_test.py` creates unit tests which you run inside the running container. So the only code that needs to be developed is found in `panoptical_test.py`. All other functionality should be built/generated using that prompt and evaluated for correctness using TruLens before the feature is published and made available to other developers.
+
+Your devcontainer is ready for production, to the extent that TruLens can ensure the correctness of your code/tests.
+
+- https://www.trulens.org
+- https://calcurse.org
+- https://docs.modular.com/mojo
+
 ### Upstream/Downstream
 
 You need to configure an [endpoint](https://gitlab.com/public-rant/feature-starter/-/blob/main/test/panoptical/config.sample?ref_type=heads#L16-20) for `calcurse-caldav`
