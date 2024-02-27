@@ -47,7 +47,7 @@ Since we are using python, we can hook into the python/mojo ML ecosystem. If you
 
 The prompt can be found here
 
-```
+```markdown
 [You are a python expert...](./panoptical_test.py)
 ```
 
@@ -57,7 +57,7 @@ You need to configure an [endpoint](https://gitlab.com/public-rant/feature-start
 
 All your data will be pulled from there. Run multiple times with diff config to pull from multiple calendars or run container multiple times with unified mount point for notes.
 
-Once you've pulled data using calcurse-caldav, your LLM assistant can [optimise your schedule and create new calendars](./pan_optical_test.py).
+Once you've pulled data using calcurse-caldav, your LLM assistant can [optimise your schedule and create new calendars](./panoptical_test.py).
 
 
 ## Further work
