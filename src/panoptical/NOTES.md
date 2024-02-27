@@ -1,4 +1,4 @@
-Under the hood, this uses `pytest -K ${SPEC}` when installing the container to sync with your calendar/project management software.
+Under the hood, this uses [`pytest -K ${SPEC}`](https://gitlab.com/public-rant/feature-starter/-/blob/main/src/panoptical/install.sh?ref_type=heads#L7) when installing the container to sync with your calendar/project management software.
 
 Since we are using python, we can hook into the python/mojo ML ecosystem.
 
