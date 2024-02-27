@@ -47,16 +47,16 @@ You define a source calendar and it will optimise your tasks and create new cale
 
 You need to configure an [endpoint](https://gitlab.com/public-rant/feature-starter/-/blob/main/test/panoptical/config.sample?ref_type=heads#L16-20) for `calcurse-caldav`
 
-__it would be MUCH better if this was overridable in `calcurse-caldav`__
-
-All your data will be pulled from there. Run multiple times with diff config to pull from multiple calendars or run container multiple times with unified mount point for notes.
-
+__it would be MUCH better if this was overridable in [`calcurse-caldav`](https://gitlab.com/public-rant/feature-starter/-/blob/main/calcurse-caldav.py?ref_type=heads#L621)__
 Once you've pulled data using calcurse-caldav, your LLM assistant can [optimise your schedule and create new calendars](./panoptical_test.py).
+
+
+You provide config when running the container that sets the upstream calendar. calcurse-caldav reads from there. Since we are calling OpenAI's assistant with access to `run_radicale_server`, you can use this to delegate tasks, observe what was planned by the LLM and if you like what you see, ship it to production.
 
 
 ## Further work
 
-The CI/CD extension should respond to webhooks according to rules you will need to define. E.g., if the body of a comment matches certain criteria. Or, what about hooks triggered from motion sensors in your Apple Vision Pro which prompt SORA render the scene around the corner?
+The CI/CD extension should respond to [webhooks](https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html) according to rules you will need to define. E.g., if the body of a comment matches certain criteria. Or, what about hooks triggered from motion sensors in your Apple Vision Pro which prompt SORA render the scene around the corner?
 
 Use [`nmh`](https://www.mhonarc.org/archive/html/nmh-workers/2014-07/msg00157.html) alongside `calcurse` to handle attachments
 
