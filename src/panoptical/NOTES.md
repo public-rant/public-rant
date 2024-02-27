@@ -33,15 +33,34 @@ Since we are using python, we can hook into the python/mojo ML ecosystem. If you
 }
 ```
 
+__NB__ this requires a image with mojo available which you can use when configuring your devcontainer e.g.,
+    
+```json
+"features": {
+    "image": "gitlab.com/containers/mojo:latest",
+    "panoptical": {
+        "spec": "Update my calendar with the latest merge requests",
+        "upstream": "caldav.example.com"
+    }
+}
+```
+
 ## The Prompt
 
-The prompt uses OpenAI's assistant API to define and run new calendars.
+The [prompt](./panoptical_test.py) uses OpenAI's assistant API to define and run new calendars.
 
-You define a source calendar and it will optimise your tasks and create new calendars for work you want to delegate to a human or robot.
+This means we have access to
 
-```markdown
-[You are a python expert...](./panoptical_test.py)
-```
+- function calling
+- file/vector database
+- code intepreter
+
+You send prompt to LLM. Expected behaviour:
+
+- responds with params to start radicale servers
+- generates tasks lists and validates output
+- uses calcurse-caldav to sync changes upstream/downstream
+- sends/receives attachments from caldav
 
 ### Upstream/Downstream
 
@@ -50,6 +69,7 @@ You need to configure an [endpoint](https://gitlab.com/public-rant/feature-start
 __it would be MUCH better if this was overridable in [`calcurse-caldav`](https://gitlab.com/public-rant/feature-starter/-/blob/main/calcurse-caldav.py?ref_type=heads#L621)__
 Once you've pulled data using calcurse-caldav, your LLM assistant can [optimise your schedule and create new calendars](./panoptical_test.py).
 
+You define a source calendar and it will optimise your tasks and create new calendars for work you want to delegate to a human or robot.
 
 You provide config when running the container that sets the upstream calendar. calcurse-caldav reads from there. Since we are calling OpenAI's assistant with access to `run_radicale_server`, you can use this to delegate tasks, observe what was planned by the LLM and if you like what you see, ship it to production.
 
