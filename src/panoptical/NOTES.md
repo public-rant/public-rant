@@ -2,6 +2,8 @@ Under the hood, this uses [`pytest -K ${SPEC}`](https://gitlab.com/public-rant/f
 
 Since we are using python, we can hook into the python/mojo ML ecosystem.
 
+The tests run `calcurse-caldav.py` to fetch/sync content/tasks, optimises your schedule python libraries, and evaluates the output with TruLens.
+
 The CI/CD extension should respond to webhooks according to rules you will need to define. E.g., if the body of a comment matches certain criteria.
 
 ```json
