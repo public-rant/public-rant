@@ -4,15 +4,15 @@
     "version": "1.0.3",
     "description": "A feature to remind you of your favorite color",
     "options": {
-        "favorite": {
+        "spec": {
             "type": "string",
-            "enum": [
-                "red",
-                "gold",
-                "green"
-            ],
-            "default": "red",
-            "description": "Choose your favorite color."
+            "default": "Make it better",
+            "description": "Prompt for LLM."
+        },
+        "upstream": {
+            "type": "string",
+            "default": "fixme",
+            "description": "Your caldav server from which to pull events/attachments"
         }
     },
     "installsAfter": [

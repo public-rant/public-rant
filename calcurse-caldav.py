@@ -617,6 +617,8 @@ else:
     syncdbfn = os.path.join(caldav_data, "sync.db")
 
 # Parse command line arguments.
+
+# TODO add --upstream argument and read from devcontainer options
 parser = argparse.ArgumentParser('calcurse-caldav')
 parser.add_argument('--init', action='store', dest='init', default=None,
                     choices=['keep-remote', 'keep-local', 'two-way'],

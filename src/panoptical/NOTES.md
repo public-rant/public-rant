@@ -9,20 +9,10 @@ __NB__ there is more than one way to configure a devcontainer
 
 ```json
 {
-    "mojo": {
-        "image": "docker.io/library/mojo:latest",
-        "features": {
-            "panoptical": {
-                "spec": "Update my calendar with the latest merge requests"
-            }
-        }
-    },
-    "python": {
-        "image": "docker.io/library/python:latest",
-        "features": {
-            "panoptical": {
-                "spec": "Update my calendar with the latest comments"
-            }
+    "features": {
+        "panoptical": {
+            "spec": "Update my calendar with the latest merge requests",
+            "upstream": "caldav.example.com"
         }
     }
 }
@@ -45,7 +35,9 @@ Since we are using python, we can hook into the python/mojo ML ecosystem. If you
 
 ## The Prompt
 
-The prompt can be found here
+The prompt uses OpenAI's assistant API to define and run new calendars.
+
+You define a source calendar and it will optimise your tasks and create new calendars for work you want to delegate to a human or robot.
 
 ```markdown
 [You are a python expert...](./panoptical_test.py)
@@ -55,6 +47,8 @@ The prompt can be found here
 
 You need to configure an [endpoint](https://gitlab.com/public-rant/feature-starter/-/blob/main/test/panoptical/config.sample?ref_type=heads#L16-20) for `calcurse-caldav`
 
+__it would be MUCH better if this was overridable in `calcurse-caldav`__
+
 All your data will be pulled from there. Run multiple times with diff config to pull from multiple calendars or run container multiple times with unified mount point for notes.
 
 Once you've pulled data using calcurse-caldav, your LLM assistant can [optimise your schedule and create new calendars](./panoptical_test.py).
@@ -63,6 +57,8 @@ Once you've pulled data using calcurse-caldav, your LLM assistant can [optimise 
 ## Further work
 
 The CI/CD extension should respond to webhooks according to rules you will need to define. E.g., if the body of a comment matches certain criteria. Or, what about hooks triggered from motion sensors in your Apple Vision Pro which prompt SORA render the scene around the corner?
+
+Use [`nmh`](https://www.mhonarc.org/archive/html/nmh-workers/2014-07/msg00157.html) alongside `calcurse` to handle attachments
 
 
 ## Radicale
