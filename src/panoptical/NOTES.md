@@ -26,6 +26,7 @@ __NB__ there is more than one way to configure a devcontainer
         }
     }
 }
+```
 
 Where `spec` is a prompt which will be sent to an LLM to generate content/code.
 
