@@ -1,3 +1,7 @@
+# Panoptical 
+
+The [build](./gitlab-ci.yml) is broken!
+
 ## Prompt Driven Development
 
 We define a `--spec` option for `pytest` in [`conftest.py`](./conftest.py). This allows us to run `pytest -s panoptical_test.py --spec ${SPEC}` in [src/panoptical/install.sh](./src/panoptical/install.sh)
