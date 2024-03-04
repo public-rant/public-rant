@@ -466,3 +466,40 @@ PITCH.%.0.mp4: PITCH.%.1.mp4
 	-vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
 	-t $$(ffprobe -i $< -show_entries format=duration -v quiet -of csv="p=0") \
 	-c:v libx264 -pix_fmt yuv420p $@
+
+TARGETS = ABOUT.md EXPERIENCE.md EDUCATION.md
+
+.PHONY: $(TARGETS)
+
+RESUME.pdf: RESUME.html
+	echo FIXME
+
+RESUME.html: $(TARGETS)
+	pandoc -s -M title="Richard Massey" -c ./pandoc.css $(TARGETS) --embed-resources -f markdown+link_attributes+header_attributes -o $@
+
+ITEMS = $(shell ls -r EXPERIENCE.*.md) 
+EXPERIENCE.md: $(ITEMS)
+	pandoc $? -o $@
+
+EXPERIENCE.%.md: EXPERIENCE.%.md.json
+	echo foo | pandoc -s --metadata-file $< --template EXPERIENCE.md.txt -o $@
+
+.PRECIOUS: EXPERIENCE.%.md.json
+
+EXPERIENCE.%.md.json:
+	rg '^' $(basename $@ .json) --json | jq -cs 'map(select(.type == "match")) | group_by(.data.path.text)[] | map(.data.lines.text | sub("\n"; "")) | { title: .[0], company: .[1], start: .[2], end: .[3], city: .[4], state: .[5], desc: .[6] }' > $@
+
+SEARCH_TERMS = product+manager
+SERP_API_KEY = $(shell pass show serp_api_key)
+
+search.md: #$(SEARCH_TERMS).json
+	echo foo | pandoc -s -f markdown+emoji --metadata-file $(SEARCH_TERMS).json --template search.pdf.md -o $@
+
+
+$(SEARCH_TERMS).json:
+	curl --get https://serpapi.com/search \
+	-d api_key="$(SERP_API_KEY)" \
+	-d engine="google_jobs" \
+	-d google_domain="google.com" \
+	-d uule="w+CAIQICIgU3lkbmV5LE5ldyBTb3V0aCBXYWxlcyxBdXN0cmFsaWE" \
+	-d q="$(SEARCH_TERMS)" > $@
