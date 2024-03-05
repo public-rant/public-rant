@@ -387,9 +387,10 @@ default:
 
 
 runs:
-	pandoc doc.docx -t html | pandoc -f html -t gfm | split -p "^$$" -a 3 -d - run-
+	cat search.md | split -p "/pagebreak" -a 3 -d - run-
 	ls run-* | xargs -I _ mv _ _.txt
 	ls run-*.txt | xargs -I _ cp _ add-_
+	ls add-* | wc -l
 	
 
 $(module).json:
@@ -448,7 +449,6 @@ assistant.json: instructions.txt.json
 
 instructions.txt.json:
 	cat $(basename $@ .json) | jq -Rs 'split("\n") | { "instructions": map(select(. != "")) | join(" "), "name": "businessplan", "model": "gpt-3.5-turbo-16k" }'
-
 CARDS = $(shell ls PITCH.*.0 | grep -v PITCH.md)
 
 final.mp4: output.mp4
@@ -466,6 +466,7 @@ PITCH.%.0.mp4: PITCH.%.1.mp4
 	-vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
 	-t $$(ffprobe -i $< -show_entries format=duration -v quiet -of csv="p=0") \
 	-c:v libx264 -pix_fmt yuv420p $@
+
 
 TARGETS = ABOUT.md EXPERIENCE.md EDUCATION.md
 
