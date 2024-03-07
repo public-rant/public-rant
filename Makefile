@@ -376,131 +376,135 @@
 
 # # 	for m in $?; do pandoc -f gfm $$item.md -o $$m.md.pdf; done
 
-module ?= businessplan
+# module ?= businessplan
 
-.PRECIOUS: threads/%.json run-%.txt.json runs/%.json
+# .PRECIOUS: threads/%.json run-%.txt.json runs/%.json
 
-default:
-	jq -rs '.[] | @sh "make threads/\(.thread_id).md"' < $(wildcard runs/*.json)
-	ls -tr threads/*.md | xargs pandoc -o plan.md
-	pandoc plan.md -o test.pdf
+# default:
+# 	jq -rs '.[] | @sh "make threads/\(.thread_id).md"' < $(wildcard runs/*.json)
+# 	ls -tr threads/*.md | xargs pandoc -o plan.md
+# 	pandoc plan.md -o test.pdf
 
 
-runs:
-	cat search.md | split -p "/pagebreak" -a 3 -d - run-
-	ls run-* | xargs -I _ mv _ _.txt
-	ls run-*.txt | xargs -I _ cp _ add-_
-	ls add-* | wc -l
+# runs:
+# 	cat search.md | split -p "/pagebreak" -a 3 -d - run-
+# 	ls run-* | xargs -I _ mv _ _.txt
+# 	ls run-*.txt | xargs -I _ cp _ add-_
+# 	ls add-* | wc -l
 	
 
-$(module).json:
-	curl https://api.openai.com/v1/threads \
-	-H "Content-Type: application/json" \
-	-H "Authorization: Bearer $$OPENAI_API_KEY" \
-	-H "OpenAI-Beta: assistants=v1" \
-	-d '' > $@
-
-threads/%.md: threads/%.json
-	cat runs/*.json | jq -rs --argjson thread "$$(cat $<)" '. as $$runs | $$thread.data[] | . as $$data | $$data.run_id as $$run_id | $$runs[] | select(.id == $$run_id).instructions as $$instructions | $$data.content | map([$$instructions, "", .text.value])[][]' | pandoc -o $@
-	echo '\pagebreak' >> $@
-
-threads/%.json:
-	@curl -s https://api.openai.com/v1/threads/$*/messages \
-	-H "Content-Type: application/json" \
-	-H "Authorization: Bearer $$OPENAI_API_KEY" \
-	-H "OpenAI-Beta: assistants=v1" | jq > $@
-
-messages.txt.json:
-	@cat $(basename $@ .json) | rg '^' --json  | jq -s 'map(select(.type == "match")) | sort_by(.data.path.text)[].data.lines.text | gsub("\n"; "") | select(. != "") | { role: "user", "content": . }'
-# ¡¡¡FIXME!!!
-# %.json.json: %.json
-# 	curl https://api.openai.com/v1/threads/$*/messages \
+# $(module).json:
+# 	curl https://api.openai.com/v1/threads \
 # 	-H "Content-Type: application/json" \
 # 	-H "Authorization: Bearer $$OPENAI_API_KEY" \
 # 	-H "OpenAI-Beta: assistants=v1" \
-# 	-d @./$< | jq -c > $@
-# status:
-# 	curl https://api.openai.com/v1/threads/$(THREAD_ID)/runs/$(RUN_ID) \
+# 	-d '' > $@
+
+# threads/%.md: threads/%.json
+# 	cat runs/*.json | jq -rs --argjson thread "$$(cat $<)" '. as $$runs | $$thread.data[] | . as $$data | $$data.run_id as $$run_id | $$runs[] | select(.id == $$run_id).instructions as $$instructions | $$data.content | map([$$instructions, "", .text.value])[][]' | pandoc -o $@
+# 	echo '\pagebreak' >> $@
+
+# threads/%.json:
+# 	@curl -s https://api.openai.com/v1/threads/$*/messages \
+# 	-H "Content-Type: application/json" \
 # 	-H "Authorization: Bearer $$OPENAI_API_KEY" \
-# 	-H "OpenAI-Beta: assistants=v1"
+# 	-H "OpenAI-Beta: assistants=v1" | jq > $@
 
-add-run-%.txt: runs/%.json
-	cat $< | jq .status
+# messages.txt.json:
+# 	@cat $(basename $@ .json) | rg '^' --json  | jq -s 'map(select(.type == "match")) | sort_by(.data.path.text)[].data.lines.text | gsub("\n"; "") | select(. != "") | { role: "user", "content": . }'
+# # ¡¡¡FIXME!!!
+# # %.json.json: %.json
+# # 	curl https://api.openai.com/v1/threads/$*/messages \
+# # 	-H "Content-Type: application/json" \
+# # 	-H "Authorization: Bearer $$OPENAI_API_KEY" \
+# # 	-H "OpenAI-Beta: assistants=v1" \
+# # 	-d @./$< | jq -c > $@
+# # status:
+# # 	curl https://api.openai.com/v1/threads/$(THREAD_ID)/runs/$(RUN_ID) \
+# # 	-H "Authorization: Bearer $$OPENAI_API_KEY" \
+# # 	-H "OpenAI-Beta: assistants=v1"
 
-
-
-run-%.txt.json:
-	cat $(basename $@ .json) | rg '^' --context 50 --json| jq -cs --arg additional_instructions "$$(cat add-$(basename $@ .json))" 'map(select(.type == "match")) as $$messages | { assistant_id: "asst_VcOodVezjDgM63kESN9tuMxZ", instructions: [$$messages[].data.lines.text | sub("\n"; "")] | join(" "), thread: { metadata: {slice: $*}, messages: [{ role: "user", content: $$additional_instructions}] } }' | tee $@
-
-
-runs/%.json: run-%.txt.json
-	@curl https://api.openai.com/v1/threads/runs \
-	-H "Authorization: Bearer $$OPENAI_API_KEY" \
-	-H "Content-Type: application/json" \
-	-H "OpenAI-Beta: assistants=v1" \
-	-d @./$< | tee $@
-
-assistant.json: instructions.txt.json
-	curl "https://api.openai.com/v1/assistants" \
-	-H "Content-Type: application/json" \
-	-H "Authorization: Bearer $OPENAI_API_KEY" \
-	-H "OpenAI-Beta: assistants=v1" \
-	-d @./$<
-
-instructions.txt.json:
-	cat $(basename $@ .json) | jq -Rs 'split("\n") | { "instructions": map(select(. != "")) | join(" "), "name": "businessplan", "model": "gpt-3.5-turbo-16k" }'
-CARDS = $(shell ls PITCH.*.0 | grep -v PITCH.md)
-
-final.mp4: output.mp4
-	ffmpeg -y -i $< -vf "setpts=(PTS-STARTPTS)/1.25" -af atempo=1.25 $@
-
-output.mp4: cards
-	ffmpeg -y -f concat -i files.txt -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" $@
-cards: $(CARDS)
-	for item in $?; do ${MAKE} $$item.mp4; done
-PITCH.%.1.mp4: PITCH.%.1
-	cp $$(cat PITCH.$*) $@
-
-PITCH.%.0.mp4: PITCH.%.1.mp4
-	ffmpeg -y -i "$$(cat $$(basename $@ .mp4))" -i $< \
-	-vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
-	-t $$(ffprobe -i $< -show_entries format=duration -v quiet -of csv="p=0") \
-	-c:v libx264 -pix_fmt yuv420p $@
+# add-run-%.txt: runs/%.json
+# 	cat $< | jq .status
 
 
-TARGETS = ABOUT.md EXPERIENCE.md EDUCATION.md
 
-.PHONY: $(TARGETS)
-
-RESUME.pdf: RESUME.html
-	echo FIXME
-
-RESUME.html: $(TARGETS)
-	pandoc -s -M title="Richard Massey" -c ./pandoc.css $(TARGETS) --embed-resources -f markdown+link_attributes+header_attributes -o $@
-
-ITEMS = $(shell ls -r EXPERIENCE.*.md) 
-EXPERIENCE.md: $(ITEMS)
-	pandoc $? -o $@
-
-EXPERIENCE.%.md: EXPERIENCE.%.md.json
-	echo foo | pandoc -s --metadata-file $< --template EXPERIENCE.md.txt -o $@
-
-.PRECIOUS: EXPERIENCE.%.md.json
-
-EXPERIENCE.%.md.json:
-	rg '^' $(basename $@ .json) --json | jq -cs 'map(select(.type == "match")) | group_by(.data.path.text)[] | map(.data.lines.text | sub("\n"; "")) | { title: .[0], company: .[1], start: .[2], end: .[3], city: .[4], state: .[5], desc: .[6] }' > $@
-
-SEARCH_TERMS = product+manager
-SERP_API_KEY = $(shell pass show serp_api_key)
-
-search.md: #$(SEARCH_TERMS).json
-	echo foo | pandoc -s -f markdown+emoji --metadata-file $(SEARCH_TERMS).json --template search.pdf.md -o $@
+# run-%.txt.json:
+# 	cat $(basename $@ .json) | rg '^' --context 50 --json| jq -cs --arg additional_instructions "$$(cat add-$(basename $@ .json))" 'map(select(.type == "match")) as $$messages | { assistant_id: "asst_VcOodVezjDgM63kESN9tuMxZ", instructions: [$$messages[].data.lines.text | sub("\n"; "")] | join(" "), thread: { metadata: {slice: $*}, messages: [{ role: "user", content: $$additional_instructions}] } }' | tee $@
 
 
-$(SEARCH_TERMS).json:
-	curl --get https://serpapi.com/search \
-	-d api_key="$(SERP_API_KEY)" \
-	-d engine="google_jobs" \
-	-d google_domain="google.com" \
-	-d uule="w+CAIQICIgU3lkbmV5LE5ldyBTb3V0aCBXYWxlcyxBdXN0cmFsaWE" \
-	-d q="$(SEARCH_TERMS)" > $@
+# runs/%.json: run-%.txt.json
+# 	@curl https://api.openai.com/v1/threads/runs \
+# 	-H "Authorization: Bearer $$OPENAI_API_KEY" \
+# 	-H "Content-Type: application/json" \
+# 	-H "OpenAI-Beta: assistants=v1" \
+# 	-d @./$< | tee $@
+
+# assistant.json: instructions.txt.json
+# 	curl "https://api.openai.com/v1/assistants" \
+# 	-H "Content-Type: application/json" \
+# 	-H "Authorization: Bearer $OPENAI_API_KEY" \
+# 	-H "OpenAI-Beta: assistants=v1" \
+# 	-d @./$<
+
+# instructions.txt.json:
+# 	cat $(basename $@ .json) | jq -Rs 'split("\n") | { "instructions": map(select(. != "")) | join(" "), "name": "businessplan", "model": "gpt-3.5-turbo-16k" }'
+# CARDS = $(shell ls PITCH.*.0 | grep -v PITCH.md)
+
+# final.mp4: output.mp4
+# 	ffmpeg -y -i $< -vf "setpts=(PTS-STARTPTS)/1.25" -af atempo=1.25 $@
+
+# output.mp4: cards
+# 	ffmpeg -y -f concat -i files.txt -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" $@
+# cards: $(CARDS)
+# 	for item in $?; do ${MAKE} $$item.mp4; done
+# PITCH.%.1.mp4: PITCH.%.1
+# 	cp $$(cat PITCH.$*) $@
+
+# PITCH.%.0.mp4: PITCH.%.1.mp4
+# 	ffmpeg -y -i "$$(cat $$(basename $@ .mp4))" -i $< \
+# 	-vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
+# 	-t $$(ffprobe -i $< -show_entries format=duration -v quiet -of csv="p=0") \
+# 	-c:v libx264 -pix_fmt yuv420p $@
+
+
+# TARGETS = ABOUT.md EXPERIENCE.md EDUCATION.md
+
+# .PHONY: $(TARGETS)
+
+# RESUME.pdf: RESUME.html
+# 	echo FIXME
+
+# RESUME.html: $(TARGETS)
+# 	pandoc -s -M title="Richard Massey" -c ./pandoc.css $(TARGETS) --embed-resources -f markdown+link_attributes+header_attributes -o $@
+
+# ITEMS = $(shell ls -r EXPERIENCE.*.md) 
+# EXPERIENCE.md: $(ITEMS)
+# 	pandoc $? -o $@
+
+# EXPERIENCE.%.md: EXPERIENCE.%.md.json
+# 	echo foo | pandoc -s --metadata-file $< --template EXPERIENCE.md.txt -o $@
+
+# .PRECIOUS: EXPERIENCE.%.md.json
+
+# EXPERIENCE.%.md.json:
+# 	rg '^' $(basename $@ .json) --json | jq -cs 'map(select(.type == "match")) | group_by(.data.path.text)[] | map(.data.lines.text | sub("\n"; "")) | { title: .[0], company: .[1], start: .[2], end: .[3], city: .[4], state: .[5], desc: .[6] }' > $@
+
+# SEARCH_TERMS = product+manager
+# SERP_API_KEY = $(shell pass show serp_api_key)
+
+# search.md: #$(SEARCH_TERMS).json
+# 	echo foo | pandoc -s -f markdown+emoji --metadata-file $(SEARCH_TERMS).json --template search.pdf.md -o $@
+
+
+# $(SEARCH_TERMS).json:
+# 	curl --get https://serpapi.com/search \
+# 	-d api_key="$(SERP_API_KEY)" \
+# 	-d engine="google_jobs" \
+# 	-d google_domain="google.com" \
+# 	-d uule="w+CAIQICIgU3lkbmV5LE5ldyBTb3V0aCBXYWxlcyxBdXN0cmFsaWE" \
+# 	-d q="$(SEARCH_TERMS)" > $@
+
+
+test:
+	devcontainer features test --project-folder .devcontainer --skip-autogenerated
