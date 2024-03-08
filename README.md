@@ -1,46 +1,206 @@
+# My Favorite Color (panoptical)
+
+A feature to remind you of your favorite color
+
+## Example Usage
+
+``` json
+"features": {
+    "ghcr.io/public-rant/public-rant/panoptical:1": {}
+}
+```
+
+## Options
+
+  --------------------------------------------------------------------------
+  Options Id        Description          Type              Default Value
+  ----------------- -------------------- ----------------- -----------------
+  spec              Prompt for LLM.      string            Make it better
+
+  upstream          Your caldav server   string            fixme
+                    from which to pull                     
+                    events/attachments                     
+  --------------------------------------------------------------------------
+
 # Panoptical
 
-> I've had this dream since before Rails was released to build a web interface for developing Rails itself. We've long had little drops of this idea,... So rather than wait for some grand vision to come together, I'm just getting started with what we got and going from there.
->> @dhh, [The Rails Conductor](https://github.com/rails/rails/pull/35489)
+The [build](./gitlab-ci.yml) is broken!
 
----
+## Prompt Driven Development
 
-## Does it solve a real problem for GitLab users? 
+We define a `--spec` option for `pytest` in
+[`conftest.py`](./conftest.py). This allows us to run
+`pytest -s panoptical_test.py --spec ${SPEC}` in
+[src/panoptical/install.sh](./src/panoptical/install.sh)
 
-*Does the project clearly articulate the problem it aims to address for GitLab users? Effective solutions are not solely technical but can also drive social impact. Explain why this problem is significant and how your solution effectively resolves it.*
+Really what you want to do is configure your devcontainer thusly:
 
-> People who use A.I will replace people who don't
->> Andrew Ng, [Wall Street Journal News](https://www.youtube.com/watch?v=-mIjwN1o7nE)
+**NB** there is more than one way to configure a devcontainer
 
-Panoptical bridges the gap between thought and action. With Panoptical, you can build your product using nothing other than your existing product management tools. Configure APIs with custom fields, code features with Natural Language. Test features in isolated sandboxes before releasing them to production.
+``` json
+{
+    "features": {
+        "panoptical": {
+            "spec": "Update my calendar with the latest merge requests",
+            "upstream": "caldav.example.com"
+        }
+    }
+}
+```
 
-Panoptical uses webhooks to listen for events which prompt
-Make comments on merge requests or tickets in your project management software. Observe the changes deployed to codesandbox. Deploy devcontainer build artifacts to production. Track changes with your calendar.
+Where `spec` is a prompt which will be sent to an LLM to generate
+content/code.
 
-## Innovativeness
+Since we are using python, we can hook into the python/mojo ML
+ecosystem. If you configure your devcontainer with `mounts`, you can
+"trick" calcurse-caldav.py to running as a mojo script. (This assumes
+you're running in a container with `mojo` available)
 
-*Does the project highlight the unique features of your solution and how it differs from existing solutions? Show the creativity and originality in your approach.*
+``` json
+...
+"panoptical": {
+    ...
+    "mounts": [
+        "source=/path/to/calcurse-caldav.py,target=/path/to/calcurse-caldav.mojo,type=bind,consistency=cached",
+        "source=${localWorkspaceFolder}/calcurse-caldav.conf,target=/data,type=bind,consistency=cached"
+    ]
+}
+```
 
-Mojo is a new programming language which is faster than C and is compabtible with the Python ecosystem of machine learning libraries.
-Using the existing `calcurse-caldav` utility, we can syncronise with any calendar or project management tool. Using the scaffolding of a devcontainer together with webhooks which listen for events which should prompt the system, we can implement something like an opensource version of getclockwise, or the rails conductor. And everything is securely backed up with restic.
+**NB** this requires a image with mojo available which you can use when
+configuring your devcontainer e.g.,
 
-## Overall Quality
+``` json
+"features": {
+    "image": "gitlab.com/containers/mojo:latest",
+    "panoptical": {
+        "spec": "Update my calendar with the latest merge requests",
+        "upstream": "caldav.example.com"
+    }
+}
+```
 
-*Did you demonstrate excellence in the execution of your idea, including design, user experience, and technical implementation?*
+## The Prompt
 
-With a little bit more time, this could be made into a production ready system.
+The [prompt](./panoptical_test.py) uses OpenAI's assistant API to define
+and run new calendars.
 
-## Scalability
-*Can your solution grow in terms of customer base, revenue, and operations without a significant drop in performance or quality?*
+This means we have access to
 
-Mojo adds a lot of bandwidth. The system is able to scale in performance alongside the performce gains of proprietary and open source models.
+-   function calling
+-   file/vector database
+-   code intepreter
 
-## Total Addressable Market (TAM)
-*What is the potential impact opportunity if your solution was to capture the entire market segment it&#39;s targeting?*
+You send prompt to LLM. Expected behaviour:
 
-Initially developers wanting to deploy branches to sandboxed environments, then eventually anyone who uses Project Management Software or a Calendar.
+-   responds with params to start radicale servers
+-   generates tasks lists and validates output
+-   uses calcurse-caldav to sync changes upstream/downstream
+-   sends/receives attachments from caldav
 
-## Feasibility
-*How practical is your solution in terms of available resources, technology, and time? Consider any potential barriers to success.*
+**NB** The idea is that the "test" you invoke when installing the
+devcontainer-feature `panoptical_test.py` creates unit tests which you
+run inside the running container. So the only code that needs to be
+developed is found in `panoptical_test.py`. All other functionality
+should be built/generated using that prompt and evaluated for
+correctness using TruLens before the feature is published and made
+available to other developers.
 
-See [`NOTES.md`](src/panoptical/NOTES.md)
+Your devcontainer is ready for production, to the extent that TruLens
+can ensure the correctness of your code/tests.
+
+-   https://www.trulens.org
+-   https://calcurse.org
+-   https://docs.modular.com/mojo
+
+### Upstream/Downstream
+
+You need to configure an
+[endpoint](https://gitlab.com/public-rant/feature-starter/-/blob/main/test/panoptical/config.sample?ref_type=heads#L16-20)
+for `calcurse-caldav`
+
+**it would be MUCH better if this was overridable in
+[`calcurse-caldav`](https://gitlab.com/public-rant/feature-starter/-/blob/main/calcurse-caldav.py?ref_type=heads#L621)**
+Once you've pulled data using calcurse-caldav, your LLM assistant can
+[optimise your schedule and create new calendars](./panoptical_test.py).
+
+You define a source calendar and it will optimise your tasks and create
+new calendars for work you want to delegate to a human or robot.
+
+You provide config when running the container that sets the upstream
+calendar. calcurse-caldav reads from there. Since we are calling
+OpenAI's assistant with access to `run_radicale_server`, you can use
+this to delegate tasks, observe what was planned by the LLM and if you
+like what you see, ship it to production.
+
+## Further work
+
+The CI/CD extension should respond to
+[webhooks](https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html)
+according to rules you will need to define. E.g., if the body of a
+comment matches certain criteria. Or, what about hooks triggered from
+motion sensors in your Apple Vision Pro which prompt SORA render the
+scene around the corner?
+
+Use
+[`nmh`](https://www.mhonarc.org/archive/html/nmh-workers/2014-07/msg00157.html)
+alongside `calcurse` to handle attachments
+
+## Radicale
+
+### Why would you want this?
+
+**calendars integrate nicely with 3rd party project management
+software**
+
+I think it could be helpful to have all of the tasks your AI agents are
+planning expressed as a calendar. The CalDAV protocol allows
+attachments, and `nmh` can handle sending them.
+
+To make this e2e, apply this patch
+
+``` diff
+index d26a5bc..760b686 100644
+--- a/.devcontainer/devcontainer.json
++++ b/.devcontainer/devcontainer.json
+@@ -1,5 +1,7 @@
+ {
+-    "image": "mcr.microsoft.com/devcontainers/javascript-node:1-18-bullseye",
++    "dockerComposeFile": "docker-compose.yml",
++    "service": "devcontainer",
++    "workspaceFolder": "/workspaces/feature-starter",
+     "customizations": {
+         "vscode": {
+             "settings": {
+diff --git a/.devcontainer/docker-compose.yml b/.devcontainer/docker-compose.yml
+new file mode 100644
+index 0000000..8c6850f
+--- /dev/null
++++ b/.devcontainer/docker-compose.yml
+@@ -0,0 +1,35 @@
++version: '3.8'
++services:
++  devcontainer:
++    image: mcr.microsoft.com/devcontainers/base:ubuntu
++    volumes:
++      - ../..:/workspaces:cached
++    network_mode: service:radicale
++    command: sleep infinity
++
++  radicale:
++    image: tomsquest/docker-radicale
++    container_name: radicale
++    ports:
++      - 127.0.0.1:5232:5232
++    volumes:
++      - work:/data
++
++volumes:
++  work:
+```
+
+------------------------------------------------------------------------
+
+*Note: This file was auto-generated from the
+[devcontainer-feature.json](https://github.com/public-rant/public-rant/blob/main/.devcontainer/src/panoptical/devcontainer-feature.json).
+Add additional notes to a `NOTES.md`.*
