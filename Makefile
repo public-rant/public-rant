@@ -509,6 +509,8 @@ FEATURES = .devcontainer/src/**/README.md
 
 README.md: $(FEATURES)
 	pandoc $? -o $@
+	git add $@
+	git commit -m "Automated documentation update [skip ci]"
 
 
 test:
