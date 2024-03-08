@@ -23,6 +23,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: docker://pandoc/core:2.9
       - name: Create PR for Documentation
         id: push_image_info
         env:
